@@ -245,6 +245,8 @@ footer .slogan{font-family:var(--serif);font-size:18px;color:#c9cbe6;margin-bott
         </div>
       </div>
       <div class="f-row"><label>用一句话说说：你理想中的一次"见面"是什么样的？</label><textarea id="f-wish" placeholder="写真实想法就好，这会帮我们更懂你（选填）"></textarea></div>
+      <div class="f-row" style="position:absolute;left:-9999px" aria-hidden="true"><label>请勿填写</label><input type="text" id="f-honey" tabindex="-1" autocomplete="off"></div>
+      <input type="hidden" id="f-code" value="">
       <button type="submit" class="btn btn-primary">提交 · 等我们联系你</button>
       <div class="form-msg" id="formMsg"></div>
     </form>
@@ -258,13 +260,19 @@ footer .slogan{font-family:var(--serif);font-size:18px;color:#c9cbe6;margin-bott
 </footer>
 
 <script>
-/* ===== 唯一需要配置的一行：表单提交端点 =====
-   部署后创建免费 Formspree 表单(https://formspree.io)或自有后端，
-   把下面 ENDPOINT 换成形如 https://formspree.io/f/xxxx 的地址即可。
-   未配置时，提交会回退为「复制报名信息到剪贴板 + 提示联系」模式，不会丢数据。 */
-const ENDPOINT = "";
+/* ===== 表单提交：FormSubmit（免注册，直达 sinyu1998@gmail.com） =====
+   注意：首次提交后，FormSubmit 会给邮箱发一封激活邮件，点一次 Activate 即永久生效。
+   防垃圾三层：蜜罐字段 + 停留时间校验 + 会话内提交频次限制。 */
+const ENDPOINT = "https://formsubmit.co/ajax/sinyu1998@gmail.com";
+const PAGE_OPEN = Date.now();
+let lastSubmit = 0;
 
 document.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>c.classList.toggle('on')));
+// 从同频引擎跳转过来时，自动带上同频码
+try{
+  const c=new URLSearchParams(location.search).get('code');
+  if(c&&c.startsWith('CX-')){document.getElementById('f-code').value=c;}
+}catch(_){}
 
 function picked(id){return [...document.querySelectorAll('#'+id+' .chip.on')].map(c=>c.textContent.trim());}
 
@@ -277,14 +285,21 @@ document.getElementById('joinForm').addEventListener('submit',async e=>{
   const contact=document.getElementById('f-contact').value.trim();
   const zones=picked('f-zones'),times=picked('f-times');
   const wish=document.getElementById('f-wish').value.trim();
+  const honey=document.getElementById('f-honey').value;
+  const code=document.getElementById('f-code').value;
+  // 防垃圾：蜜罐非空、停留<4秒、60秒内重复提交 → 静默丢弃
+  if(honey||Date.now()-PAGE_OPEN<4000||Date.now()-lastSubmit<60000){show('提交过于频繁，请稍后再试。',false);return;}
   if(!name||!contact){show('请填写称呼和联系方式。',false);return;}
   if(!zones.length){show('请至少选择一个常活动区域。',false);return;}
   if(!times.length){show('请至少选择一个有空时段。',false);return;}
-  const data={name,contact,zones,times,wish,source:'landing-page',ts:new Date().toISOString()};
+  if(contact.length<5){show('联系方式看起来不完整，请检查。',false);return;}
+  lastSubmit=Date.now();
+  const data={name,contact,zones:zones.join('、'),times:times.join('、'),wish,code:code||'无',source:'landing-page',_subject:'🌱 成行种子用户报名：'+name,_template:'table',_captcha:'false'};
   if(ENDPOINT){
     try{
       const r=await fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(data)});
-      if(r.ok){show('报名成功！我们会在 48 小时内联系你安排访谈。',true);e.target.reset();document.querySelectorAll('.chip.on').forEach(c=>c.classList.remove('on'));}
+      const j=await r.json().catch(()=>({}));
+      if(r.ok&&(j.success===true||j.success==="true")){show('报名成功！我们会在 48 小时内联系你安排访谈。',true);e.target.reset();document.querySelectorAll('.chip.on').forEach(c=>c.classList.remove('on'));}
       else show('提交失败，请稍后再试或直接联系创始人微信。',false);
     }catch(_){show('网络异常，请稍后再试。',false);}
   }else{
