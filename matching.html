@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>成行 · 同频引擎演示｜AI 画像与匹配</title>
+<meta name="description" content="成行 L1 意图兼容引擎网页演示：20 分钟访谈生成你的画像卡，与对方的同频码匹配，得到带理由的同频报告。">
+<style>
+:root{
+  --ink:#141634; --indigo:#4F46E5; --rose:#C81E4E; --cream:#FAF9F6;
+  --muted:#6b6f8a; --line:#e7e5f0; --ok:#1a9e5c;
+  --serif:"Noto Serif SC","Songti SC",serif;
+  --sans:"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--sans);background:var(--cream);color:var(--ink);line-height:1.75;-webkit-font-smoothing:antialiased}
+.wrap{max-width:760px;margin:0 auto;padding:0 22px}
+.top{position:sticky;top:0;z-index:20;background:rgba(250,249,246,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;height:58px}
+.top .logo{font-family:var(--serif);font-size:19px;font-weight:700}
+.top .logo em{font-style:normal;color:var(--rose)}
+.top a{font-size:14px;color:var(--muted);text-decoration:none}
+header{background:linear-gradient(160deg,#141634,#2a2160);color:#fff;text-align:center;padding:64px 0 56px}
+header h1{font-family:var(--serif);font-size:clamp(26px,4.6vw,40px);margin-bottom:14px}
+header p{color:#c9cbe6;font-size:16px;max-width:560px;margin:0 auto}
+.tag-demo{display:inline-block;margin-top:18px;font-size:12.5px;color:#ffd3e0;border:1px solid rgba(255,122,162,.5);border-radius:999px;padding:5px 16px;letter-spacing:.1em}
+main{padding:48px 0 80px}
+.stage{display:none}
+.stage.on{display:block;animation:fade .45s ease}
+@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:36px 34px;box-shadow:0 10px 30px rgba(20,22,52,.06)}
+.kicker{font-size:12.5px;letter-spacing:.3em;color:var(--rose);font-weight:700;margin-bottom:10px}
+.q-title{font-family:var(--serif);font-size:23px;margin-bottom:8px}
+.q-hint{font-size:14px;color:var(--muted);margin-bottom:22px}
+.opts{display:grid;gap:12px}
+.opt{padding:15px 20px;border:1.5px solid var(--line);border-radius:12px;cursor:pointer;transition:.15s;font-size:15.5px;background:#fff}
+.opt:hover{border-color:var(--indigo)}
+.opt.sel{border-color:var(--rose);background:#fdf2f6;font-weight:600}
+textarea{width:100%;min-height:96px;padding:14px 16px;border-radius:12px;border:1.5px solid var(--line);font-size:15px;font-family:var(--sans);resize:vertical}
+textarea:focus{outline:none;border-color:var(--rose)}
+.nav{display:flex;justify-content:space-between;margin-top:26px}
+button{font-family:var(--sans)}
+.btn{padding:13px 34px;border-radius:999px;font-size:15.5px;font-weight:600;border:none;cursor:pointer;transition:.2s}
+.btn-p{background:var(--rose);color:#fff;box-shadow:0 6px 18px rgba(200,30,78,.25)}
+.btn-p:hover{transform:translateY(-1px)}
+.btn-p:disabled{background:#d9d6e6;box-shadow:none;cursor:not-allowed;transform:none}
+.btn-g{background:transparent;border:1.5px solid var(--ink);color:var(--ink)}
+.btn-g:hover{background:var(--ink);color:#fff}
+/* 进度 */
+.bar{height:5px;background:var(--line);border-radius:99px;overflow:hidden;margin:34px 0 26px}
+.bar i{display:block;height:100%;background:var(--rose);width:0;transition:.4s;border-radius:99px}
+/* 画像卡 */
+.pcard{background:linear-gradient(160deg,#141634,#241d55);color:#fff;border-radius:22px;padding:40px 36px;text-align:center;position:relative;overflow:hidden}
+.pcard::after{content:"";position:absolute;width:340px;height:340px;border-radius:50%;background:radial-gradient(circle,rgba(79,70,229,.4),transparent 65%);top:-120px;right:-90px}
+.pcard .type{font-family:var(--serif);font-size:30px;margin:6px 0 4px;position:relative;z-index:1}
+.pcard .etype{color:#ff7aa2;font-size:13.5px;letter-spacing:.25em;position:relative;z-index:1}
+.pcard .quote{position:relative;z-index:1;margin:18px auto 0;max-width:420px;font-size:15px;color:#d9daf0;font-style:italic}
+.traits{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:22px;position:relative;z-index:1}
+.traits span{font-size:13px;border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:6px 16px;color:#e6e7f5}
+.codebox{margin-top:26px;background:#fff;border:1.5px dashed var(--rose);border-radius:14px;padding:18px;text-align:center}
+.codebox b{font-family:ui-monospace,Menlo,monospace;font-size:17px;letter-spacing:.06em;color:var(--rose);word-break:break-all}
+.mini{font-size:13px;color:var(--muted);margin-top:8px}
+/* 匹配 */
+.mrow{display:flex;flex-direction:column;gap:14px;margin:8px 0 4px}
+.min{display:flex;align-items:center;gap:12px}
+.min label{font-size:14px;min-width:64px;font-weight:600}
+.min input{flex:1;padding:12px 14px;border-radius:10px;border:1.5px solid var(--line);font-size:14px;font-family:ui-monospace,monospace;text-transform:uppercase}
+.min input:focus{outline:none;border-color:var(--rose)}
+.dim{margin-top:18px}
+.dim .h{display:flex;justify-content:space-between;font-size:14.5px;font-weight:600}
+.dim .h b{color:var(--indigo)}
+.track{height:8px;background:#eeecf6;border-radius:99px;margin:7px 0 6px;overflow:hidden}
+.track i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--indigo),var(--rose));width:0;transition:.8s ease}
+.why{font-size:13.5px;color:var(--muted)}
+.verdict{margin-top:28px;border-radius:16px;padding:24px 26px;text-align:center}
+.verdict.hi{background:#eefaf3;border:1.5px solid #bfe8d2}
+.verdict.mid{background:#fdf6ec;border:1.5px solid #f0dcb4}
+.verdict.lo{background:#fdf2f4;border:1.5px solid #f3c6d1}
+.verdict .big{font-family:var(--serif);font-size:40px;line-height:1.2}
+.verdict .cap{font-size:14px;color:var(--muted);margin-top:4px}
+.scene{margin-top:26px;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:20px 24px;font-size:14.5px}
+.scene b{color:var(--rose)}
+.err{color:var(--rose);font-size:13.5px;margin-top:10px;display:none}
+footer{padding:36px 0;background:#0f1024;color:#7c80a8;font-size:13px;text-align:center}
+footer .slogan{font-family:var(--serif);font-size:16px;color:#c9cbe6;margin-bottom:6px}
+@media(max-width:560px){.card{padding:26px 20px}.pcard{padding:30px 22px}}
+</style>
+</head>
+<body>
+
+<div class="top"><div class="wrap">
+  <div class="logo">成行 <em>同频引擎</em></div>
+  <a href="https://sinyu1998-eng.github.io/chengxing-landing/">← 返回官网</a>
+</div></div>
+
+<header>
+  <h1>先同频，再见面</h1>
+  <p>回答 8 个问题，生成你的画像卡与同频码。和对方互换同频码，就能看到一份带理由的匹配报告。</p>
+  <span class="tag-demo">L1 意图兼容引擎 · 网页演示版</span>
+</header>
+
+<main class="wrap">
+
+  <!-- 入口 -->
+  <section class="stage on" id="st-home">
+    <div class="card center-x">
+      <div class="kicker">START</div>
+      <h2 class="q-title" style="margin-bottom:10px">两个入口</h2>
+      <p class="q-hint" style="margin-bottom:26px">第一次来：做访谈，生成画像卡和同频码。<br>已经有同频码：直接进入匹配。</p>
+      <div style="display:flex;gap:14px;flex-wrap:wrap">
+        <button class="btn btn-p" onclick="go(1)">开始 8 题访谈（约 3 分钟）</button>
+        <button class="btn btn-g" onclick="go(90)">我有同频码，去匹配</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 访谈 -->
+  <section class="stage" id="st-quiz">
+    <div class="bar"><i id="barFill"></i></div>
+    <div class="card">
+      <div class="kicker" id="qKick">Q1 / 8</div>
+      <h2 class="q-title" id="qTitle"></h2>
+      <p class="q-hint" id="qHint"></p>
+      <div id="qBody"></div>
+      <div class="err" id="qErr">这一题请先选择一个选项（最后一题可以只写一句话）。</div>
+      <div class="nav">
+        <button class="btn btn-g" id="qPrev" onclick="prevQ()">上一题</button>
+        <button class="btn btn-p" id="qNext" onclick="nextQ()">下一题</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 画像卡 -->
+  <section class="stage" id="st-card">
+    <div class="pcard">
+      <div class="etype" id="cEtype"></div>
+      <div class="type" id="cType"></div>
+      <div class="quote" id="cQuote"></div>
+      <div class="traits" id="cTraits"></div>
+    </div>
+    <div class="codebox">
+      <div style="font-size:13px;color:var(--muted);margin-bottom:6px">你的同频码（发给那个人）</div>
+      <b id="cCode"></b>
+      <div class="mini">同频码只包含你的问卷选择，不包含姓名与联系方式。</div>
+      <button class="btn btn-p" style="margin-top:14px" onclick="copyCode()">复制同频码</button>
+    </div>
+    <div class="nav" style="margin-top:26px">
+      <button class="btn btn-g" onclick="go(1)">重新做一遍</button>
+      <button class="btn btn-p" onclick="go(90)">拿对方同频码去匹配 →</button>
+    </div>
+  </section>
+
+  <!-- 匹配 -->
+  <section class="stage" id="st-match">
+    <div class="card">
+      <div class="kicker">MATCH</div>
+      <h2 class="q-title" style="margin-bottom:14px">输入两份同频码</h2>
+      <div class="mrow">
+        <div class="min"><label>我的码</label><input id="mA" placeholder="CX-...."></div>
+        <div class="min"><label>对方的码</label><input id="mB" placeholder="CX-...."></div>
+      </div>
+      <div class="err" id="mErr">同频码无效：应为 CX- 开头的一串字符，且来自本页生成的问卷。</div>
+      <div class="nav">
+        <button class="btn btn-g" onclick="go(1)">我还没做访谈</button>
+        <button class="btn btn-p" onclick="runMatch()">计算同频度</button>
+      </div>
+    </div>
+    <div id="mReport"></div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="slogan">成行。让每一次计划，都成行。</div>
+  <div>L1 意图兼容引擎演示版：真实计算，纯本地运行，不上传任何数据。真实产品在此之上叠加 L2 语义匹配、L3 场景求解与真人把关。© 2026 成行 The Concierge AI</div>
+</footer>
+
+<script>
+/* ---------- 问卷定义 ---------- */
+const QS = [
+ {t:"你在哪个区域活动最多？",h:"见面半径越短，越容易真的成行。",type:"opts",o:["静安","徐汇","长宁","黄浦","浦东","其他上海市区"]},
+ {t:"一个理想的周末，你更像哪种状态？",h:"没有对错，只是节奏不同。",type:"opts",o:["呼朋唤友才热闹","三两好友小聚","一个人充电也挺好"]},
+ {t:"面对一个新认识的人，你倾向于？",h:"这决定你们第一次见面的舒适区。",type:"opts",o:["先线上聊聊看","直接见面，聊了才算认识","看感觉，都行"]},
+ {t:"你最舒服的第一次见面场景是？",h:"可多选，选 1–2 个。",type:"multi",o:["咖啡馆深聊","City Walk 散步","看展 / 看电影","一顿认真的饭","运动 / 徒步"]},
+ {t:"做计划时你是？",h:"",type:"opts",o:["提前订好，变化会让我烦","大概有方向，细节随缘","从不计划，临场发挥"]},
+ {t:"下面哪个更接近你对「同频」的理解？",h:"",type:"opts",o:["价值观对得上，聊得深","玩得到一起，轻松自在","互相尊重，保持边界"]},
+ {t:"哪些话题你愿意在第一次见面聊？",h:"可多选。",type:"multi",o:["职业与事业","亲密关系观","家庭与成长","爱好与生活方式","最近的困惑"]},
+ {t:"用一句话说说：你希望成行帮你找到什么样的人？",h:"写真实想法就好，它会原样出现在你的画像卡上。",type:"text",ph:"例：找个能安静聊两小时、也愿意陪我逛苏州河的人。"}
+];
+
+const CODE_PREFIX="CX-";
+let ans=new Array(QS.length).fill(null);
+let cur=0, locking=false;
+
+/* ---------- 舞台控制 ---------- */
+function go(n){
+  document.querySelectorAll('.stage').forEach(s=>s.classList.remove('on'));
+  document.getElementById('st-'+['home','quiz','card','match'][n-1===0?0:n===90?3:1]||'');
+  const map={1:'st-quiz',90:'st-match'};
+  if(n===0) document.getElementById('st-home').classList.add('on');
+  else if(n===2) document.getElementById('st-card').classList.add('on');
+  else document.getElementById(map[n]).classList.add('on');
+  if(n===1){cur=0;renderQ();}
+  window.scrollTo({top:0});
+}
+
+/* ---------- 问卷渲染 ---------- */
+function renderQ(){
+  const q=QS[cur];
+  document.getElementById('qKick').textContent=`Q${cur+1} / ${QS.length}`;
+  document.getElementById('qTitle').textContent=q.t;
+  document.getElementById('qHint').textContent=q.h||"";
+  const body=document.getElementById('qBody');
+  document.getElementById('qErr').style.display='none';
+  document.getElementById('qPrev').style.visibility=cur===0?'hidden':'visible';
+  document.getElementById('qNext').textContent=cur===QS.length-1?'生成画像卡 →':'下一题';
+  document.getElementById('barFill').style.width=(cur/QS.length*100)+'%';
+  if(q.type==='text'){
+    body.innerHTML=`<textarea id="qFree" placeholder="${q.ph||''}">${ans[cur]||''}</textarea>`;
+  }else{
+    body.innerHTML='<div class="opts">'+q.o.map((o,i)=>
+      `<div class="opt ${Array.isArray(ans[cur])&&ans[cur].includes(i)||ans[cur]===i?'sel':''}" onclick="pick(${i})">${o}</div>`).join('')+'</div>';
+  }
+}
+function pick(i){
+  const q=QS[cur];
+  if(q.type==='multi'){
+    if(!Array.isArray(ans[cur]))ans[cur]=[];
+    const p=ans[cur].indexOf(i);
+    if(p>=0)ans[cur].splice(p,1); else{ if(ans[cur].length>=2){return;} ans[cur].push(i);}
+    renderQ();
+  }else{
+    if(locking)return; locking=true;
+    ans[cur]=i;renderQ();
+    setTimeout(()=>{locking=false;nextQ();},300);
+  }
+}
+function prevQ(){if(!locking&&cur>0){cur--;renderQ();}}
+function nextQ(){
+  if(locking)return;
+  const q=QS[cur];
+  if(q.type==='text'){
+    ans[cur]=(document.getElementById('qFree').value||'').trim();
+    if(!ans[cur]){document.getElementById('qErr').style.display='block';return;}
+  }else if(ans[cur]===null||ans[cur]===undefined||(Array.isArray(ans[cur])&&!ans[cur].length)){
+    document.getElementById('qErr').style.display='block';return;
+  }
+  if(cur<QS.length-1){cur++;renderQ();}else{makeCard();}
+}
+
+/* ---------- 画像卡 ---------- */
+const ARCHA=new Set([1,4,5]);
+function makeCard(){
+  const [zone,energy,style,scene,plan,sync,topics,wish]=ans;
+  const typeName={'呼朋唤友才热闹':'热浪型','三两好友小聚':'炉火型','一个人充电也挺好':'月光型'}[QS[1].o[energy]];
+  const planName={'提前订好，变化会让我烦':'规划派','大概有方向，细节随缘':'方向派','从不计划，临场发挥':'即兴派'}[QS[4].o[plan]];
+  const syncName={'价值观对得上，聊得深':'深流同频','玩得到一起，轻松自在':'轻快同频','互相尊重，保持边界':'边界同频'}[QS[5].o[sync]];
+  document.getElementById('cEtype').textContent='CHENGXING PROFILE';
+  document.getElementById('cType').textContent=`${typeName} · ${planName} · ${syncName}`;
+  document.getElementById('cQuote').textContent='“'+wish+'”';
+  const tr=[QS[0].o[zone],
+    QS[2].o[style].split('，')[0],
+    scene.map(i=>QS[3].o[i]).join(' / '),
+    topics.map(i=>QS[6].o[i]).slice(0,3).join(' · ')];
+  document.getElementById('cTraits').innerHTML=tr.map(t=>`<span>${t}</span>`).join('');
+  const code=CODE_PREFIX+btoa(unescape(encodeURIComponent(JSON.stringify(ans)))).replace(/[=+\/]/g,m=>({'=':'', '+':'-', '/':'_'}[m]));
+  document.getElementById('cCode').textContent=code;
+  window.__code=code;
+  go(2);
+}
+function copyCode(){
+  navigator.clipboard.writeText(window.__code).then(()=>{const b=event.target;b.textContent='已复制 ✓';setTimeout(()=>b.textContent='复制同频码',1500);});
+}
+
+/* ---------- 匹配 ---------- */
+function decode(code){
+  try{
+    let c=code.trim();
+    if(!c.startsWith(CODE_PREFIX))return null;
+    let b=c.slice(CODE_PREFIX.length).replace(/-/g,'+').replace(/_/g,'/');
+    while(b.length%4)b+='=';
+    const arr=JSON.parse(decodeURIComponent(escape(atob(b))));
+    if(!Array.isArray(arr)||arr.length!==QS.length)return null;
+    return arr;
+  }catch(e){return null;}
+}
+function runMatch(){
+  const A=decode(document.getElementById('mA').value), B=decode(document.getElementById('mB').value);
+  const err=document.getElementById('mErr');
+  if(!A||!B){err.style.display='block';return;}
+  err.style.display='none';
+  // 维度计算（规则引擎，可解释）
+  const dims=[];
+  // 1 场景重合（multi sets）
+  const sA=new Set(A[3]),sB=new Set(B[3]);
+  const inter=[...sA].filter(i=>sB.has(i)).length;
+  const uni=new Set([...A[3],...B[3]]).size;
+  dims.push({n:'场景偏好',v:inter?Math.round(60+40*inter/uni):25,
+    w:inter?`你们都想${[...sA].filter(i=>sB.has(i)).map(i=>QS[3].o[i]).join('、')}——第一次见面可以直接定在这里。`:`你们的场景偏好不重合，第一次见面建议各退一步选中性场景（咖啡馆深聊）。`});
+  // 2 节奏相容
+  const eA=A[1],eB=B[1],ed=Math.abs(eA-eB);
+  dims.push({n:'社交节奏',v:[85,65,40][ed],
+    w:ed===0?'你们的社交能量几乎同拍，相处压力最小。':ed===1?'一人偏热闹、一人偏好静——安排小规模场景（咖啡/散步）最舒适。':'你们的社交能量差异较大，适合低刺激场景，且第一次见面时长不宜过久。'});
+  // 3 计划风格
+  const p=Math.abs(A[4]-B[4]);
+  dims.push({n:'计划风格',v:[85,65,45][p],
+    w:p===0?'你们对计划的看法一致，不容易在「几点到、去哪里」上消耗。':'计划风格略有差异，建议由更「规划」的一方提议方案，另一方负责让步一次。'});
+  // 4 同频定义
+  dims.push({n:'同频定义',v:A[5]===B[5]?90:A[5]===2||B[5]===2?70:55,
+    w:A[5]===B[5]?`你们对「同频」的理解一致（${QS[5].o[A[5]]}），这是关系里最值钱的对齐。`:`你们对「同频」的理解不同——这不一定是坏事，但值得在第一次见面就聊开。`});
+  // 5 话题意愿重合
+  const tA=new Set(A[6]),tB=new Set(B[6]);
+  const ti=[...tA].filter(i=>tB.has(i));
+  dims.push({n:'话题接口',v:ti.length?Math.round(55+45*ti.length/Math.min(tA.size,tB.size)):35,
+    w:ti.length?`你们都愿意聊：${ti.map(i=>QS[6].o[i]).join('、')}——这就是你们的破冰话题库。`:'共同开放的话题较少，建议从「最近的困惑」这类轻话题开始。'});
+  // 6 区域
+  dims.push({n:'地理半径',v:A[0]===B[0]?90:(A[0]<5&&B[0]<5?70:50),
+    w:A[0]===B[0]?`你们都在${QS[0].o[A[0]]}活动，见面半径最短。`:'活动区域不同，建议选两区之间的场馆。'});
+  const total=Math.round(dims.reduce((s,d)=>s+d.v,0)/dims.length);
+  const cls=total>=75?'hi':total>=55?'mid':'lo';
+  const cap=total>=75?'同频信号很强，值得安排一次见面。':total>=55?'有同频基础，建议先从轻场景开始。':'当前画像差异较大——成行的建议是：不勉强，继续等更同频的人。';
+  // 推荐场景：交集优先，否则咖啡
+  let rec='咖啡馆深聊（中性、低压力、好随时结束）';
+  if(inter){rec=QS[3].o[[...sA].filter(i=>sB.has(i))[0]];}
+  document.getElementById('mReport').innerHTML=`
+  <div class="card" style="margin-top:22px">
+    <div class="kicker">REPORT</div>
+    <div class="verdict ${cls}">
+      <div class="big">${total}<span style="font-size:18px;color:var(--muted)"> / 100</span></div>
+      <div style="font-family:var(--serif);font-size:19px;margin-top:6px">同频指数</div>
+      <div class="cap">${cap}</div>
+    </div>
+    ${dims.map(d=>`<div class="dim"><div class="h"><span>${d.n}</span><b>${d.v}</b></div>
+      <div class="track"><i data-w="${d.v}"></i></div><div class="why">${d.w}</div></div>`).join('')}
+    <div class="scene"><b>建议的第一次见面：</b>${rec}。双方确认时间后，真实产品会由见面 Agent 完成订场与提醒。</div>
+  </div>`;
+  setTimeout(()=>document.querySelectorAll('.track i').forEach(i=>i.style.width=i.dataset.w+'%'),80);
+  document.getElementById('mReport').scrollIntoView({behavior:'smooth',block:'start'});
+}
+</script>
+</body>
+</html>
