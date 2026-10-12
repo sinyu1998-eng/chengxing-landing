@@ -334,11 +334,13 @@ function runMatch(){
       <div class="track"><i data-w="${d.v}"></i></div><div class="why">${d.w}</div></div>`).join('')}
     <div class="scene"><b>建议的第一次见面：</b>${rec}。双方确认时间后，真实产品会由见面 Agent 完成订场与提醒。</div>
     <div style="text-align:center;margin-top:26px">
-      <a class="btn btn-p" style="text-decoration:none;display:inline-block" href="index.html?code=${encodeURIComponent(window.__code||'')}#join">拿这份报告，报名种子计划 →</a>
+      <a class="btn btn-p" style="text-decoration:none;display:inline-block" id="reportJoin">拿这份报告，报名种子计划 →</a>
       <div class="mini" style="margin-top:10px">种子用户前 200 位：免费体验首次见面，创始团队真人把关</div>
     </div>
   </div>`;
   setTimeout(()=>document.querySelectorAll('.track i').forEach(i=>i.style.width=i.dataset.w+'%'),80);
+  const rj=document.getElementById('reportJoin');
+  if(rj){const rp=new URLSearchParams(location.search).get('ref');rj.href='index.html?code='+encodeURIComponent(window.__code||'')+(rp?'&ref='+encodeURIComponent(rp):'')+'#join';}
   document.getElementById('mReport').scrollIntoView({behavior:'smooth',block:'start'});
 }
 </script>
