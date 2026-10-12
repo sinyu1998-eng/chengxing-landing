@@ -115,6 +115,13 @@ textarea{resize:vertical;min-height:84px}
 .form-msg.err{display:block;background:rgba(255,122,162,.15);color:#ffa8c5}
 form .btn-primary{width:100%;margin-top:6px}
 .join-note{text-align:center;font-size:13px;color:#9aa0c8;margin-top:22px}
+.wx-card{display:flex;gap:22px;align-items:center;margin:30px auto 0;max-width:560px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:18px;padding:22px 26px;text-align:left}
+.wx-qr{flex:0 0 108px}
+.wx-qr img{width:108px;height:108px;border-radius:12px;background:#fff;display:block}
+.wx-txt b{font-size:16px;color:#fff;display:block;margin-bottom:6px}
+.wx-txt span{display:block;font-size:13px;color:#c9cbe6;line-height:1.6}
+.wx-mini{color:#9aa0c8!important;margin-top:8px;font-size:12px!important}
+@media(max-width:560px){.wx-card{flex-direction:column;text-align:center}.wx-qr{flex:none}}
 
 footer{padding:44px 0;background:#0f1024;color:#7c80a8;font-size:13.5px;text-align:center}
 footer .slogan{font-family:var(--serif);font-size:18px;color:#c9cbe6;margin-bottom:10px}
@@ -245,12 +252,21 @@ footer .slogan{font-family:var(--serif);font-size:18px;color:#c9cbe6;margin-bott
         </div>
       </div>
       <div class="f-row"><label>用一句话说说：你理想中的一次"见面"是什么样的？</label><textarea id="f-wish" placeholder="写真实想法就好，这会帮我们更懂你（选填）"></textarea></div>
+      <div class="f-row"><label>谁介绍你来的？（选填）</label><input type="text" id="f-refer" placeholder="邀请人昵称 / 微信，方便我们感谢 ta，也计入内测名额优先"></div>
       <div class="f-row" style="position:absolute;left:-9999px" aria-hidden="true"><label>请勿填写</label><input type="text" id="f-honey" tabindex="-1" autocomplete="off"></div>
       <input type="hidden" id="f-code" value="">
       <button type="submit" class="btn btn-primary">提交 · 等我们联系你</button>
       <div class="form-msg" id="formMsg"></div>
     </form>
     <p class="join-note">提交即表示同意我们按《用户隐私政策》处理你的信息，仅用于种子用户招募联系，不作他用。</p>
+    <div class="wx-card">
+      <div class="wx-qr"><img src="qr_join.png" alt="成行内测群二维码"></div>
+      <div class="wx-txt">
+        <b>加微信，进内测群</b>
+        <span>扫码加入「成行种子用户」群，第一时间体验同频引擎、报名线下快闪，也能直接和创始团队聊你的想法。</span>
+        <span class="wx-mini">群二维码 7 天有效，过期可邮件 sinyu1998@gmail.com 索取新码。</span>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -273,6 +289,11 @@ try{
   const c=new URLSearchParams(location.search).get('code');
   if(c&&c.startsWith('CX-')){document.getElementById('f-code').value=c;}
 }catch(_){}
+// 从邀请链接（?ref=邀请人）进入时，自动预填邀请人字段
+try{
+  const ref=new URLSearchParams(location.search).get('ref');
+  if(ref){document.getElementById('f-refer').value=ref;}
+}catch(_){}
 
 function picked(id){return [...document.querySelectorAll('#'+id+' .chip.on')].map(c=>c.textContent.trim());}
 
@@ -285,6 +306,7 @@ document.getElementById('joinForm').addEventListener('submit',async e=>{
   const contact=document.getElementById('f-contact').value.trim();
   const zones=picked('f-zones'),times=picked('f-times');
   const wish=document.getElementById('f-wish').value.trim();
+  const referrer=document.getElementById('f-refer').value.trim();
   const honey=document.getElementById('f-honey').value;
   const code=document.getElementById('f-code').value;
   // 防垃圾：蜜罐非空、停留<4秒、60秒内重复提交 → 静默丢弃
@@ -294,7 +316,7 @@ document.getElementById('joinForm').addEventListener('submit',async e=>{
   if(!times.length){show('请至少选择一个有空时段。',false);return;}
   if(contact.length<5){show('联系方式看起来不完整，请检查。',false);return;}
   lastSubmit=Date.now();
-  const data={name,contact,zones:zones.join('、'),times:times.join('、'),wish,code:code||'无',source:'landing-page',_subject:'🌱 成行种子用户报名：'+name,_template:'table',_captcha:'false'};
+  const data={name,contact,zones:zones.join('、'),times:times.join('、'),wish,code:code||'无',referrer:referrer||'无',source:'landing-page',_subject:'🌱 成行种子用户报名：'+name,_template:'table',_captcha:'false'};
   if(ENDPOINT){
     try{
       const r=await fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(data)});
